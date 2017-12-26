@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #f4f4f4">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+
+    <link rel="stylesheet" href="http://beisu-js.oss-cn-beijing.aliyuncs.com/refresh/dropload.min.css">
+    <link rel="stylesheet" href="http://beisu-js.oss-cn-beijing.aliyuncs.com/refresh/mescroll.min.css">
+
+    <style>
+        body{width: 10rem;height: 16.24rem;}
+        .item_bg{width:9.6rem;height:2rem;margin-left:0.2rem;margin-top:0.1rem;background-color:white;border:0.02rem solid#f2f2f2;border-radius:0.15rem}
+        .item_img{float:left;width:1.6rem;height:1.6rem;margin-top:0.2rem;margin-left:0.2rem}
+        .item_name{float:left;width:7rem;height:0.8rem;line-height:0.8rem;margin-top:0.2rem;margin-left:0.2rem;font-size:0.4rem}
+        .item_bonus{float:left;width:7rem;height:0.8rem;line-height:0.8rem;margin-left:0.2rem;font-size:0.4rem;color:red;text-align:right}
+    </style>
+</head>
+
+<body style="margin: auto">
+
+<div id="refresh">
+    <div class="data_list"></div>
+</div>
+
+</body>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="http://beisu-js.oss-cn-beijing.aliyuncs.com/refresh/mescroll.min.js"></script>
+<script src="http://beisu-js.oss-cn-beijing.aliyuncs.com/refresh/dropload.min.js"></script>
+<script>
+    var _page = 1;
+    var _list_data = [];
+
+    setupRefresh();
+
+    function setupRefresh () {
+        $('#refresh').dropload({
+            scrollArea : window,
+            domUp : {
+                domClass   : 'dropload-up',
+                domRefresh : '<div class="dropload-refresh">↓下拉刷新</div>',
+                domUpdate  : '<div class="dropload-update">↑释放更新</div>',
+                domLoad    : '<div class="dropload-load"><span class="loading"></span>加载中...</div>'
+            },
+            domDown : {
+                domClass   : 'dropload-down',
+                domRefresh : '<div class="dropload-refresh">↑上拉加载更多</div>',
+                domLoad    : '<div class="dropload-load"><span class="loading"></span>加载中...</div>',
+                domNoData  : '<div class="dropload-noData">暂无数据</div>'
+            },
+            loadUpFn : function(list){ //下拉刷新
+                _page = 1;
+                getListData(list);
+            },
+            loadDownFn : function(list){ //上拉加载
+                getListData(list);
+                _page++;
+            },
+            threshold : 50
+        });
+    }
+
+    function getListData(list) {
+        console.log(_page);
+        var result = '';
+        $.ajax({
+            url: "https://app.beisu100.com/beisuapp/course/courselistmenu",
+            type: "get",
+            async: true,
+            dataType: "json",
+            data: {
+                p: _page
+            },
+            success: function(data){
+                _list_data = data["data"];
+                if(_list_data.length > 0) {
+                    for(var index = 0; index < _list_data.length;  index++){
+                        result += '<div class="item_bg">'+
+                            '<img class="item_img" src="'+_list_data[index]["titleimg"]+'"/>'+
+                            '<div class="item_name">'+_list_data[index]["title"]+'</div>'+
+                            '<div class="item_bonus">'+_list_data[index]["pressname"]+'</div>'+
+                            '</div>';
+                    }
+
+                    if(_page == 1) {
+                        $('.data_list').html(result);
+                        list.resetload();	// 每次数据加载完，必须重置
+                        list.unlock();	//解锁loadDownFn里锁定的情况
+                        list.noData(false);
+                    } else {
+                        $('.data_list').append(result);	// 插入数据到页面，放到最后面
+                        list.resetload();	// 每次数据加载完，必须重置
+                    }
+                } else { // 如果没有数据
+                    list.lock(); //锁定
+                    list.noData();// 无数据
+                }
+            },
+            error: function(xhr, type){
+                list.resetload();// 即使加载出错，也得重置
+            }
+        });
+    }
+
+</script>
+</html>
